@@ -1,4 +1,4 @@
-package nl.aerius;
+package nl.aerius.pdf;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +26,8 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.VerticalAlignment;
 
+import nl.aerius.util.TriConsumer;
+
 public class PdfProcessingHandle {
   private static final Logger LOG = LoggerFactory.getLogger(PdfProcessingHandle.class);
 
@@ -47,7 +49,19 @@ public class PdfProcessingHandle {
 
   private PdfFont pdfFont;
 
+  public static PdfProcessingHandle create(final String source) {
+    return PdfProcessingHandle.create()
+        .source(source);
+  }
+
+  public static PdfProcessingHandle create(final String source, final String target) {
+    return PdfProcessingHandle.create()
+        .source(source)
+        .target(target);
+  }
+
   public void process() {
+    checkFinalized();
     finalized = true;
 
     try (final InputStream is = PdfProcessingHandle.class.getClassLoader().getResourceAsStream(font)) {
@@ -86,6 +100,7 @@ public class PdfProcessingHandle {
   }
 
   public PdfProcessingHandle metaData(final Map<String, String> meta) {
+    checkFinalized();
     return documentProcessor(document -> {
       final PdfDocumentInfo info = document.getPdfDocument().getDocumentInfo();
       info.setMoreInfo(meta);
@@ -93,6 +108,7 @@ public class PdfProcessingHandle {
   }
 
   public PdfProcessingHandle frontPage(final String source) {
+    checkFinalized();
     return documentProcessor(document -> {
       try (PdfReader reader = new PdfReader(source)) {
         final PdfDocument titlePdf = new PdfDocument(reader);
@@ -105,6 +121,7 @@ public class PdfProcessingHandle {
   }
 
   public PdfProcessingHandle documentSubtitle(final String subtitle) {
+    checkFinalized();
     return pageProcessor((document, page, number) -> {
       final Paragraph documentNameSubtitle = new Paragraph(subtitle)
           .setFont(pdfFont)
@@ -117,6 +134,7 @@ public class PdfProcessingHandle {
   }
 
   public PdfProcessingHandle documentTitle(final String title) {
+    checkFinalized();
     return pageProcessor((document, page, number) -> {
       final Paragraph documentName = new Paragraph(title)
           .setFont(pdfFont)
@@ -129,6 +147,7 @@ public class PdfProcessingHandle {
   }
 
   public PdfProcessingHandle pageNumbers() {
+    checkFinalized();
     return pageProcessor((document, page, number) -> {
       final Rectangle pageSize = page.getPageSize();
 
@@ -140,12 +159,6 @@ public class PdfProcessingHandle {
           pageSize.getWidth() - MARGIN_HOR, FOOTER_SUBTITLE_VER,
           number, TextAlignment.RIGHT, VerticalAlignment.BOTTOM, 0);
     });
-  }
-
-  public static PdfProcessingHandle create(final String source, final String target) {
-    return PdfProcessingHandle.create()
-        .source(source)
-        .target(target);
   }
 
   public PdfProcessingHandle source(final String source) {

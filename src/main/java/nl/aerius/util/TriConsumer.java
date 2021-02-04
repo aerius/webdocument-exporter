@@ -1,4 +1,4 @@
-package nl.aerius;
+package nl.aerius.util;
 
 import java.util.Objects;
 
