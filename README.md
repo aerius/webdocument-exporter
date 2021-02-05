@@ -9,7 +9,7 @@ This simple library performs the task of exporting a web document to either PDF 
 ```xml
 <dependency>
   <groupId>nl.aerius</groupId>
-  <artifactId>aerius-webdocument-exporter</artifactId>
+  <artifactId>webdocument-exporter</artifactId>
   <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
