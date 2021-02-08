@@ -17,7 +17,7 @@ This simple library performs the task of exporting a web document to either PDF 
 and make sure to have a chromium-type instance running, for example:
 
 ```shell
-docker run -d --net=host --name=chrome-headless -p 9222:9222 --rm --cap-add=SYS_ADMIN 857d0939726d
+docker run -d --net=host -p 9222:9222 --cap-add=SYS_ADMIN justinribeiro/chrome-headless
 ```
 
 ## Usage
@@ -92,7 +92,7 @@ A chromium-headless server (or fork) must be running to facilitate the exporting
 The simplest way to get this type of server up and running for development environments is via docker:
 
 ```shell
-docker run -d --net=host --name=chrome-headless -p 9222:9222 --rm --cap-add=SYS_ADMIN 857d0939726d
+docker run -d --net=host -p 9222:9222 --cap-add=SYS_ADMIN justinribeiro/chrome-headless
 ```
 
 If the chromium-headless server ends up running somewhere other than `localhost:9222`, it can be configured with `ExportJob.chromeHost(String)`.
