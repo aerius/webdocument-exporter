@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public class ExportJob {
 
   private String name;
 
-  private Runnable waitForComplete;
+  private Consumer<DevToolsDriver> waitForComplete;
 
   private boolean saved;
 
@@ -53,7 +54,7 @@ public class ExportJob {
     return this;
   }
 
-  public ExportJob waitForComplete(final Runnable runner) {
+  public ExportJob waitForComplete(final Consumer<DevToolsDriver> runner) {
     checkExported();
     this.waitForComplete = runner;
     return this;
@@ -99,16 +100,9 @@ public class ExportJob {
 
       // Set a default wait
       if (waitForComplete == null) {
-        waitForComplete = () -> {
-          // TODO Implement a better wait condition than time.
-          try {
-            Thread.sleep(4000);
-          } catch (final InterruptedException e) {
-            // Eat
-          }
-        };
+        completeViaSleep();
       }
-      waitForComplete();
+      waitForComplete(chrome);
 
       name = handle + ".png";
       exportResult = chrome.screenshot();
@@ -122,25 +116,6 @@ public class ExportJob {
     return new SnapshotJob(this);
   }
 
-  /**
-   * TODO Provide wait-failure functionality
-   */
-  private void waitForComplete() {
-    waitForComplete.run();
-  }
-
-  public ExportJob save() {
-    saved = true;
-    outputDocument = destination + name;
-    LOG.info("Writing file to: {}", outputDocument);
-    FileUtils.writeToFile(new File(outputDocument), exportResult);
-    return this;
-  }
-
-  public byte[] result() {
-    return exportResult;
-  }
-
   public PrintJob print() {
     checkExported();
     ensureHandle();
@@ -151,9 +126,9 @@ public class ExportJob {
       chrome.setUrl(url);
 
       if (waitForComplete == null) {
-        waitForComplete = () -> chrome.waitFor("#complete-indicator");
+        completeViaIndicator();
       }
-      waitForComplete();
+      waitForComplete(chrome);
 
       final HashMap<String, Object> printParams = new HashMap<>();
       printParams.put("printBackground", true);
@@ -181,6 +156,39 @@ public class ExportJob {
     if (exported) {
       throw new IllegalStateException("Cannot mutate an already-exported job.");
     }
+  }
+
+  public ExportJob completeViaIndicator() {
+    return waitForComplete(chrome -> chrome.waitFor("#complete-indicator"));
+  }
+
+  public ExportJob completeViaSleep() {
+    return waitForComplete(chrome -> {
+      try {
+        Thread.sleep(4000);
+      } catch (final InterruptedException e) {
+        // Eat
+      }
+    });
+  }
+
+  /**
+   * TODO Provide wait-failure functionality
+   */
+  private void waitForComplete(final DevToolsDriver driver) {
+    waitForComplete.accept(driver);
+  }
+
+  public ExportJob save() {
+    saved = true;
+    outputDocument = destination + name;
+    LOG.info("Writing file to: {}", outputDocument);
+    FileUtils.writeToFile(new File(outputDocument), exportResult);
+    return this;
+  }
+
+  public byte[] result() {
+    return exportResult;
   }
 
   private DevToolsDriver fetchChrome() {
