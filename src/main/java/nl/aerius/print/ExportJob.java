@@ -23,7 +23,14 @@ public class ExportJob {
 
   private boolean exported;
 
+  private byte[] exportResult;
   private String outputDocument;
+
+  private String name;
+
+  private Runnable waitForComplete;
+
+  private boolean saved;
 
   public static ExportJob create() {
     return new ExportJob();
@@ -46,6 +53,12 @@ public class ExportJob {
     return this;
   }
 
+  public ExportJob waitForComplete(final Runnable runner) {
+    checkExported();
+    this.waitForComplete = runner;
+    return this;
+  }
+
   public ExportJob handle(final String handle) {
     checkExported();
     this.handle = handle;
@@ -65,21 +78,40 @@ public class ExportJob {
   }
 
   public SnapshotJob snapshot() {
+    final Map<String, Object> dimensions = new HashMap<>();
+    dimensions.put("x", 0);
+    dimensions.put("y", 0);
+    dimensions.put("width", 1920);
+    dimensions.put("height", 1080);
+    return snapshot(dimensions);
+  }
+
+  public SnapshotJob snapshot(final Map<String, Object> dimensions) {
     checkExported();
     ensureHandle();
     exported = true;
 
+    LOG.info("Exporting graphic from: " + url);
+
     final DevToolsDriver chrome = fetchChrome();
     try {
       chrome.setUrl(url);
-      chrome.waitFor("#complete-indicator");
 
-      final String name = handle + ".png";
-      final byte[] libraryBytes = chrome.screenshot();
+      // Set a default wait
+      if (waitForComplete == null) {
+        waitForComplete = () -> {
+          // TODO Implement a better wait condition than time.
+          try {
+            Thread.sleep(4000);
+          } catch (final InterruptedException e) {
+            // Eat
+          }
+        };
+      }
+      waitForComplete();
 
-      outputDocument = destination + name;
-      LOG.info("Writing file to: {}", outputDocument);
-      FileUtils.writeToFile(new File(outputDocument), libraryBytes);
+      name = handle + ".png";
+      exportResult = chrome.screenshot();
     } catch (final Exception e) {
       LOG.error("Unrecoverable failure while sending snapshot job to chrome instance.", e);
       throw new RuntimeException("Could not finish web document snapshot.", e);
@@ -90,6 +122,25 @@ public class ExportJob {
     return new SnapshotJob(this);
   }
 
+  /**
+   * TODO Provide wait-failure functionality
+   */
+  private void waitForComplete() {
+    waitForComplete.run();
+  }
+
+  public ExportJob save() {
+    saved = true;
+    outputDocument = destination + name;
+    LOG.info("Writing file to: {}", outputDocument);
+    FileUtils.writeToFile(new File(outputDocument), exportResult);
+    return this;
+  }
+
+  public byte[] result() {
+    return exportResult;
+  }
+
   public PrintJob print() {
     checkExported();
     ensureHandle();
@@ -98,18 +149,17 @@ public class ExportJob {
     final DevToolsDriver chrome = fetchChrome();
     try {
       chrome.setUrl(url);
-      chrome.waitFor("#complete-indicator");
 
-      final String name = handle + "_CONTENT.pdf";
+      if (waitForComplete == null) {
+        waitForComplete = () -> chrome.waitFor("#complete-indicator");
+      }
+      waitForComplete();
 
       final HashMap<String, Object> printParams = new HashMap<>();
       printParams.put("printBackground", true);
 
-      final byte[] libraryBytes = chrome.pdf(printParams);
-
-      outputDocument = destination + name;
-      LOG.info("Writing file to: {}", outputDocument);
-      FileUtils.writeToFile(new File(outputDocument), libraryBytes);
+      name = handle + "_CONTENT.pdf";
+      exportResult = chrome.pdf(printParams);
     } catch (final Exception e) {
       LOG.error("Unrecoverable failure while sending print job to chrome instance.", e);
       throw new RuntimeException("Could not finish PDF export.", e);
@@ -146,5 +196,9 @@ public class ExportJob {
 
   public String outputDocument() {
     return outputDocument;
+  }
+
+  public boolean saved() {
+    return saved;
   }
 }

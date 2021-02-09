@@ -10,4 +10,8 @@ public class SnapshotJob {
   public String outputDocument() {
     return job.outputDocument();
   }
+
+  public byte[] result() {
+    return job.result();
+  }
 }
