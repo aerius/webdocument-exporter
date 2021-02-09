@@ -30,11 +30,15 @@ To export a web page to PDF;
 ExportJob job = ExportJob.create()
   .url(url)
   .print();
+  
+// A byte[] array of the resulting job
+byte[] bytes = job.result();
 
 // The printed document will be available at 'job.outputDocument()'
+job.save();
 ```
 
-To post-process the resulting PDF document:
+Or, to post-process the resulting PDF document:
 
 ```java
 job
@@ -62,14 +66,22 @@ It is possible to add custom processors to the post-processing step, via:
 ```java
 job
   .toProcessor()
-  .target(destination)
-  // Add a document processor
   .documentProcessor((document) -> {
     // Manipulate the document in some way
   })
   .pageProcessor((document, page, number) -> {
     // Manipulate each page (by number) of the document in some way
   })
+  .process();
+```
+
+It is also possible to forego the print job, and process an existing PDF, as per the following example:
+
+```java
+PdfProcessingHandle.create(pdfDocument)
+  .target(destination)
+  .pageNumbers()
+  .title(title)
   .process();
 ```
 
@@ -82,7 +94,11 @@ ExportJob job = ExportJob.create()
   .url(url)
   .snapshot();
 
+// A byte[] array of the resulting job
+byte[] bytes = job.result();
+
 // The screenshotted image will be available at 'job.outputDocument()'
+job.save();
 ```
 
 ## Chromium

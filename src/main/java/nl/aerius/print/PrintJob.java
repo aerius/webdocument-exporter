@@ -2,11 +2,9 @@ package nl.aerius.print;
 
 import nl.aerius.pdf.PdfProcessingHandle;
 
-public class PrintJob {
-  private final ExportJob job;
-
+public class PrintJob extends OutputJob {
   public PrintJob(final ExportJob job) {
-    this.job = job;
+    super(job);
   }
 
   public PdfProcessingHandle toProcessor() {
@@ -20,9 +18,5 @@ public class PrintJob {
     }
 
     return PdfProcessingHandle.create(job.outputDocument());
-  }
-
-  public String outputDocument() {
-    return job.outputDocument();
   }
 }

@@ -133,7 +133,7 @@ public class ExportJob {
       final HashMap<String, Object> printParams = new HashMap<>();
       printParams.put("printBackground", true);
 
-      name = handle + "_CONTENT.pdf";
+      name = handle + ".pdf";
       exportResult = chrome.pdf(printParams);
     } catch (final Exception e) {
       LOG.error("Unrecoverable failure while sending print job to chrome instance.", e);
@@ -173,13 +173,20 @@ public class ExportJob {
   }
 
   /**
-   * TODO Provide wait-failure functionality
+   * TODO Provide graceful failure functionality
    */
   private void waitForComplete(final DevToolsDriver driver) {
     waitForComplete.accept(driver);
   }
 
+  /**
+   * Save the export output to disk (once)
+   */
   public ExportJob save() {
+    if (saved) {
+      return this;
+    }
+    
     saved = true;
     outputDocument = destination + name;
     LOG.info("Writing file to: {}", outputDocument);
