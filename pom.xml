@@ -48,6 +48,14 @@
     <karate.intuit.version>0.9.5</karate.intuit.version>
     <commons-io.version>2.7</commons-io.version>
     <itext.version>7.0.4</itext.version>
+
+    <aerius-tools.version>1.1.0-SNAPSHOT</aerius-tools.version>
+    <spotless.version>2.5.0</spotless.version>
+    <jacoco.version>0.8.6</jacoco.version>
+    <sonar.projectKey>aerius_webdocument-exporter</sonar.projectKey>
+    <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
+    <sonar.organization>aerius</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <dependencies>
@@ -98,4 +106,121 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M5</version>
+      </plugin>
+
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <formats>
+            <format>
+              <includes>
+                <include>pom.xml</include>
+              </includes>
+              <licenseHeader>
+                <file>pom-xml-header.txt</file>
+                <delimiter>&lt;project</delimiter>
+              </licenseHeader>
+              <trimTrailingWhitespace />
+              <endWithNewline />
+              <eclipseWtp>
+                <type>XML</type>
+                <files>
+                  <file>pom-xml.prefs</file>
+                </files>
+              </eclipseWtp>
+            </format>
+          </formats>
+          <java>
+            <includes>
+              <include>src/*/java/nl/aerius/**/*.java</include>
+            </includes>
+            <licenseHeader>
+              <file>checkstyle-header.txt</file>
+            </licenseHeader>
+            <eclipse>
+              <file>eclipse_code_formatter_profile.xml</file>
+            </eclipse>
+            <importOrder>
+              <file>eclipse.importorder</file>
+            </importOrder>
+          </java>
+        </configuration>
+
+        <dependencies>
+          <dependency>
+            <groupId>nl.aerius</groupId>
+            <artifactId>tools</artifactId>
+            <version>${aerius-tools.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <header>license-header.txt</header>
+
+          <mapping>
+            <java>SLASHSTAR_STYLE</java>
+          </mapping>
+
+          <includes>
+            <include>**/*.java</include>
+            <include>**/pom.xml</include>
+          </includes>
+
+          <excludes>
+            <!-- External source code present in our source code -->
+            <exclude>**/src/main/java/com/**/*.java</exclude>
+          </excludes>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>nl.aerius</groupId>
+            <artifactId>tools</artifactId>
+            <version>${aerius-tools.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>sonar</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
