@@ -43,6 +43,7 @@ import com.intuit.karate.shell.Command;
  * https://chromedevtools.github.io/devtools-protocol/
  *
  * @author pthomas3
+ * This class is derived from {@link com.intuit.karate.driver.chrome.Chrome} class.
  */
 public class ChromeAttachment extends DevToolsDriver {
   private static final Logger LOG = LoggerFactory.getLogger(ChromeAttachment.class);
@@ -65,11 +66,11 @@ public class ChromeAttachment extends DevToolsDriver {
     final Http http = options.getHttp();
     Command.waitForHttp(http.urlBase);
     final Http.Response res = http.path("json", "new").get();
-    
+
     id = res.jsonPath("$.id").asString();
-    
+
     LOG.info("New page ID created: ", id);
-    
+
     final String webSocketUrl = res.jsonPath("$.webSocketDebuggerUrl").asString();
     final ChromeAttachment chrome = new ChromeAttachment(options, null, webSocketUrl);
     chrome.activate();
@@ -81,11 +82,11 @@ public class ChromeAttachment extends DevToolsDriver {
     }
     return chrome;
   }
-  
+
   @Override
   public void quit() {
     LOG.info("Closing page ID " + id);
-    
+
     final Http http = options.getHttp();
     Command.waitForHttp(http.urlBase);
     http.path("json", "close", id).get();
