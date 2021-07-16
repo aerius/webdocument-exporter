@@ -1,6 +1,6 @@
 # PDF Exporter
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aerius_webdocument-exporter-plugin&metric=alert_status)](https://sonarcloud.io/dashboard?id=aerius_webdocument-exporter-plugin)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aerius_webdocument-exporter&metric=alert_status)](https://sonarcloud.io/dashboard?id=aerius_webdocument-exporter)
 
 ## Introduction
 

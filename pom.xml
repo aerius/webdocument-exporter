@@ -193,11 +193,6 @@
             <include>**/*.java</include>
             <include>**/pom.xml</include>
           </includes>
-
-          <excludes>
-            <!-- External source code present in our source code -->
-            <exclude>**/src/main/java/com/**/*.java</exclude>
-          </excludes>
         </configuration>
         <dependencies>
           <dependency>
