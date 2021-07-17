@@ -220,7 +220,7 @@ public class ExportJob {
     options.put("headless", true);
     options.put("host", host);
 
-    final ChromeAttachment chrome = ChromeAttachment.start(options);
+    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
 
     return chrome;
   }
