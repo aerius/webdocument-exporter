@@ -117,6 +117,12 @@ public class ExportJob {
   }
 
   public PrintJob print() {
+    HashMap<String, Object> printParams = new HashMap<>();
+    printParams.put("printBackground", true);
+    return print(printParams);
+  }
+
+  public PrintJob print(Map<String, Object> printParams) {
     checkExported();
     ensureHandle();
     exported = true;
@@ -129,9 +135,6 @@ public class ExportJob {
         completeViaIndicator();
       }
       waitForComplete(chrome);
-
-      final HashMap<String, Object> printParams = new HashMap<>();
-      printParams.put("printBackground", true);
 
       name = handle + ".pdf";
       exportResult = chrome.pdf(printParams);
