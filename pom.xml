@@ -64,7 +64,7 @@
     <commons-io.version>2.7</commons-io.version>
     <itext.version>7.0.4</itext.version>
 
-    <aerius-tools.version>1.1.0-SNAPSHOT</aerius-tools.version>
+    <aerius-tools.version>1.1.1</aerius-tools.version>
     <spotless.version>2.5.0</spotless.version>
     <jacoco.version>0.8.6</jacoco.version>
     <sonar.projectKey>aerius_webdocument-exporter</sonar.projectKey>
