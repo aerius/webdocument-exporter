@@ -1,5 +1,7 @@
 # PDF Exporter
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aerius_webdocument-exporter&metric=alert_status)](https://sonarcloud.io/dashboard?id=aerius_webdocument-exporter)
+
 ## Introduction
 
 This simple library performs the task of exporting a web document to either PDF or PNG, and optionally postprocessing the result. It accomplishes this by sending a document (via url) to a Chromium-type instance, and performing either a PDF export, or snapping a screenshot.
