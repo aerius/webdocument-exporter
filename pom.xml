@@ -21,7 +21,7 @@
 
   <groupId>nl.aerius</groupId>
   <artifactId>webdocument-exporter</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 
   <name>webdocument-exporter</name>
 
@@ -41,6 +41,7 @@
     <connection>scm:git:ssh://git@github.com/aerius/webdocument-exporter.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/aerius/webdocument-exporter.git</developerConnection>
     <url>https://www.github.com/aerius/webdocument-exporter</url>
+    <tag>1.0.0</tag>
   </scm>
 
   <distributionManagement>
