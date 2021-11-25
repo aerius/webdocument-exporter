@@ -26,8 +26,8 @@
   <name>webdocument-exporter</name>
 
   <organization>
-    <name>Ministry of Economic Affairs of The Netherlands</name>
-    <url>https://www.government.nl/ministries/ez</url>
+    <name>State of the Netherlands</name>
+    <url>https://www.government.nl</url>
   </organization>
 
   <licenses>
@@ -36,6 +36,12 @@
       <url>http://www.gnu.org/licenses/agpl-3.0.txt</url>
     </license>
   </licenses>
+
+  <scm>
+    <connection>scm:git:ssh://git@github.com/aerius/webdocument-exporter.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/aerius/webdocument-exporter.git</developerConnection>
+    <url>https://www.github.com/aerius/webdocument-exporter</url>
+  </scm>
 
   <distributionManagement>
     <repository>
@@ -47,14 +53,6 @@
       <url>https://nexus.aerius.nl/repository/maven-snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
-
-  <repositories>
-    <repository>
-      <id>aerius-nexus-public</id>
-      <name>AERIUS Nexus repository</name>
-      <url>https://nexus.aerius.nl/repository/maven-public/</url>
-    </repository>
-  </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -72,6 +70,14 @@
     <sonar.organization>aerius</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>aerius-nexus-public</id>
+      <name>AERIUS Nexus repository</name>
+      <url>https://nexus.aerius.nl/repository/maven-public/</url>
+    </repository>
+  </repositories>
 
   <dependencies>
     <dependency>
