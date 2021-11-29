@@ -37,6 +37,7 @@ public class ExportJob {
   private String url;
   private String handle;
   private String destination = TMP;
+  private Integer retryCount;
 
   private boolean exported;
 
@@ -91,6 +92,12 @@ public class ExportJob {
   public ExportJob chromeHost(final String host) {
     checkExported();
     this.host = host;
+    return this;
+  }
+
+  public ExportJob retry(final Integer retryCount) {
+    checkExported();
+    this.retryCount = retryCount;
     return this;
   }
 
@@ -224,6 +231,7 @@ public class ExportJob {
     options.put("host", host);
 
     final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
+    chrome.retry(retryCount);
 
     return chrome;
   }
