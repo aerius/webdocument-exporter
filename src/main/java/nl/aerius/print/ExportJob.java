@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.intuit.karate.Config;
 import com.intuit.karate.FileUtils;
 import com.intuit.karate.driver.DevToolsDriver;
 
@@ -37,7 +38,7 @@ public class ExportJob {
   private String url;
   private String handle;
   private String destination = TMP;
-  private Integer retryCount;
+  private int retryCount = Config.DEFAULT_RETRY_COUNT;
 
   private boolean exported;
 
@@ -95,7 +96,7 @@ public class ExportJob {
     return this;
   }
 
-  public ExportJob retry(final Integer retryCount) {
+  public ExportJob retry(final int retryCount) {
     checkExported();
     this.retryCount = retryCount;
     return this;
