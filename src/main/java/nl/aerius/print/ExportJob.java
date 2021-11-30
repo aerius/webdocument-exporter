@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.intuit.karate.Config;
 import com.intuit.karate.FileUtils;
 import com.intuit.karate.driver.DevToolsDriver;
 
@@ -37,6 +38,7 @@ public class ExportJob {
   private String url;
   private String handle;
   private String destination = TMP;
+  private int retryCount = Config.DEFAULT_RETRY_COUNT;
 
   private boolean exported;
 
@@ -91,6 +93,12 @@ public class ExportJob {
   public ExportJob chromeHost(final String host) {
     checkExported();
     this.host = host;
+    return this;
+  }
+
+  public ExportJob retry(final int retryCount) {
+    checkExported();
+    this.retryCount = retryCount;
     return this;
   }
 
@@ -224,6 +232,7 @@ public class ExportJob {
     options.put("host", host);
 
     final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
+    chrome.retry(retryCount);
 
     return chrome;
   }
