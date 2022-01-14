@@ -30,6 +30,8 @@ import com.intuit.karate.FileUtils;
 import com.intuit.karate.driver.DevToolsDriver;
 import com.intuit.karate.driver.MissingElement;
 
+import nl.aerius.pdf.TimeoutException;
+
 public class ExportJob {
   private static final Logger LOG = LoggerFactory.getLogger(ExportJob.class);
 
@@ -190,8 +192,8 @@ public class ExportJob {
     return waitForComplete(chrome -> {
       chrome.waitForAny("#complete-indicator", "#failure-indicator");
       if (!(chrome.exists("#failure-indicator") instanceof MissingElement)) {
-        // hard crash (for now)
-        throw new RuntimeException();
+        // Assume we're crashing with a TimeoutException (for now)
+        throw new TimeoutException();
       }
     });
   }
