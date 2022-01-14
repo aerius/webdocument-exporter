@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.intuit.karate.Config;
 import com.intuit.karate.FileUtils;
 import com.intuit.karate.driver.DevToolsDriver;
+import com.intuit.karate.driver.MissingElement;
 
 public class ExportJob {
   private static final Logger LOG = LoggerFactory.getLogger(ExportJob.class);
@@ -141,12 +142,12 @@ public class ExportJob {
   }
 
   public PrintJob print() {
-    HashMap<String, Object> printParams = new HashMap<>();
+    final HashMap<String, Object> printParams = new HashMap<>();
     printParams.put("printBackground", true);
     return print(printParams);
   }
 
-  public PrintJob print(Map<String, Object> printParams) {
+  public PrintJob print(final Map<String, Object> printParams) {
     checkExported();
     ensureHandle();
     exported = true;
@@ -183,6 +184,16 @@ public class ExportJob {
     if (exported) {
       throw new IllegalStateException("Cannot mutate an already-exported job.");
     }
+  }
+
+  public ExportJob completeOrFailViaIndicator() {
+    return waitForComplete(chrome -> {
+      chrome.waitForAny("#complete-indicator", "#failure-indicator");
+      if (!(chrome.exists("#failure-indicator") instanceof MissingElement)) {
+        // hard crash (for now)
+        throw new RuntimeException();
+      }
+    });
   }
 
   public ExportJob completeViaIndicator() {
