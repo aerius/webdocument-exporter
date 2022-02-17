@@ -89,26 +89,21 @@ public class PdfProcessingHandle {
       throw new UncheckedIOException(e);
     }
 
-    final PdfDocument pdfDoc;
-    try {
-      pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(target));
+    try (final PdfDocument pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(target));
+        final Document document = new Document(pdfDoc)) {
+      final int numberOfPages = pdfDoc.getNumberOfPages();
+
+      for (int i = 1; i <= numberOfPages; i++) {
+        final int number = i;
+        final PdfPage page = pdfDoc.getPage(i);
+        pageProcessors.forEach(v -> v.accept(document, page, number));
+      }
+
+      documentProcessors.forEach(v -> v.accept(document));
     } catch (final IOException e) {
       LOG.info("Could not fetch PDF to mutate: {}", source, e);
       throw new UncheckedIOException(e);
     }
-
-    final Document document = new Document(pdfDoc);
-    final int numberOfPages = pdfDoc.getNumberOfPages();
-
-    for (int i = 1; i <= numberOfPages; i++) {
-      final int number = i;
-      final PdfPage page = pdfDoc.getPage(i);
-      pageProcessors.forEach(v -> v.accept(document, page, number));
-    }
-
-    documentProcessors.forEach(v -> v.accept(document));
-
-    document.close();
   }
 
   public static PdfProcessingHandle create() {
