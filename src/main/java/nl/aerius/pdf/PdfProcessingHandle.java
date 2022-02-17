@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +81,7 @@ public class PdfProcessingHandle {
     finalized = true;
 
     try (final InputStream is = PdfProcessingHandle.class.getClassLoader().getResourceAsStream(font)) {
-      final byte[] fontBytes = IOUtils.toByteArray(is);
+      final byte[] fontBytes = is.readAllBytes();
 
       pdfFont = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, true);
     } catch (final IOException e) {
