@@ -18,12 +18,12 @@ package nl.aerius.pdf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,34 +81,29 @@ public class PdfProcessingHandle {
     finalized = true;
 
     try (final InputStream is = PdfProcessingHandle.class.getClassLoader().getResourceAsStream(font)) {
-      final byte[] fontBytes = IOUtils.toByteArray(is);
+      final byte[] fontBytes = is.readAllBytes();
 
       pdfFont = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, true);
     } catch (final IOException e) {
       LOG.info("Could not fetch font while processing PDF.", e);
-      throw new RuntimeException(e);
+      throw new UncheckedIOException(e);
     }
 
-    final PdfDocument pdfDoc;
-    try {
-      pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(target));
+    try (final PdfDocument pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(target));
+        final Document document = new Document(pdfDoc)) {
+      final int numberOfPages = pdfDoc.getNumberOfPages();
+
+      for (int i = 1; i <= numberOfPages; i++) {
+        final int number = i;
+        final PdfPage page = pdfDoc.getPage(i);
+        pageProcessors.forEach(v -> v.accept(document, page, number));
+      }
+
+      documentProcessors.forEach(v -> v.accept(document));
     } catch (final IOException e) {
       LOG.info("Could not fetch PDF to mutate: {}", source, e);
-      throw new RuntimeException(e);
+      throw new UncheckedIOException(e);
     }
-
-    final Document document = new Document(pdfDoc);
-    final int numberOfPages = pdfDoc.getNumberOfPages();
-
-    for (int i = 1; i <= numberOfPages; i++) {
-      final int number = i;
-      final PdfPage page = pdfDoc.getPage(i);
-      pageProcessors.forEach(v -> v.accept(document, page, number));
-    }
-
-    documentProcessors.forEach(v -> v.accept(document));
-
-    document.close();
   }
 
   public static PdfProcessingHandle create() {
@@ -131,7 +126,7 @@ public class PdfProcessingHandle {
         titlePdf.copyPagesTo(1, 1, document.getPdfDocument(), 1);
         titlePdf.close();
       } catch (final IOException e) {
-        throw new RuntimeException(e);
+        throw new UncheckedIOException(e);
       }
     });
   }

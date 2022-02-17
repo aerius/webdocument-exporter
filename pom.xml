@@ -60,7 +60,6 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <karate.intuit.version>0.9.5</karate.intuit.version>
-    <commons-io.version>2.7</commons-io.version>
     <itext.version>7.0.4</itext.version>
 
     <aerius-tools.version>1.1.1</aerius-tools.version>
@@ -85,23 +84,29 @@
       <groupId>com.intuit.karate</groupId>
       <artifactId>karate-core</artifactId>
       <version>${karate.intuit.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.intuit.karate</groupId>
       <artifactId>karate-apache</artifactId>
       <version>${karate.intuit.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.intuit.karate</groupId>
       <artifactId>karate-junit5</artifactId>
       <version>${karate.intuit.version}</version>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons-io.version}</version>
     </dependency>
 
     <dependency>
