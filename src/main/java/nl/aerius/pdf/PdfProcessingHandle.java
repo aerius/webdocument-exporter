@@ -18,6 +18,7 @@ package nl.aerius.pdf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +87,7 @@ public class PdfProcessingHandle {
       pdfFont = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, true);
     } catch (final IOException e) {
       LOG.info("Could not fetch font while processing PDF.", e);
-      throw new RuntimeException(e);
+      throw new UncheckedIOException(e);
     }
 
     final PdfDocument pdfDoc;
@@ -94,7 +95,7 @@ public class PdfProcessingHandle {
       pdfDoc = new PdfDocument(new PdfReader(source), new PdfWriter(target));
     } catch (final IOException e) {
       LOG.info("Could not fetch PDF to mutate: {}", source, e);
-      throw new RuntimeException(e);
+      throw new UncheckedIOException(e);
     }
 
     final Document document = new Document(pdfDoc);
@@ -131,7 +132,7 @@ public class PdfProcessingHandle {
         titlePdf.copyPagesTo(1, 1, document.getPdfDocument(), 1);
         titlePdf.close();
       } catch (final IOException e) {
-        throw new RuntimeException(e);
+        throw new UncheckedIOException(e);
       }
     });
   }
