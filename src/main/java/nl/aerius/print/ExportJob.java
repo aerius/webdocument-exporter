@@ -215,7 +215,7 @@ public class ExportJob {
 
   /**
    * Add more driver options, see {@link com.intuit.karate.driver.DriverOptions} for available options.
-   * @param driverOptions additional driver options beside host
+   * @param driverOptions additional driver options
    */
   public ExportJob driverOptions(final Map<String, Object> driverOptions) {
     this.driverOptions = driverOptions;
@@ -249,11 +249,10 @@ public class ExportJob {
   }
 
   private DevToolsDriver fetchChrome() {
-    final Map<String, Object> options = new HashMap<>();
+    final Map<String, Object> options = new HashMap<>(driverOptions);
     options.put("start", false);
     options.put("headless", true);
     options.put("host", host);
-    options.putAll(driverOptions);
 
     final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
     chrome.retry(retryCount);
