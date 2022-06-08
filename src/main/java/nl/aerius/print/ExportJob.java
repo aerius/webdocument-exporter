@@ -120,7 +120,7 @@ public class ExportJob {
     ensureHandle();
     exported = true;
 
-    LOG.info("Exporting graphic from: " + url);
+    LOG.info("Exporting graphic from: {}", url);
 
     final DevToolsDriver chrome = fetchChrome();
     try {
@@ -134,7 +134,7 @@ public class ExportJob {
 
       name = handle + ".png";
       exportResult = chrome.screenshot();
-    } catch (final Exception e) {
+    } catch (final RuntimeException e) {
       LOG.error("Unrecoverable failure while sending snapshot job to chrome instance.", e);
       throw new RuntimeException("Could not finish web document snapshot.", e);
     } finally {
@@ -166,7 +166,7 @@ public class ExportJob {
 
       name = handle + ".pdf";
       exportResult = chrome.pdf(printParams);
-    } catch (final Exception e) {
+    } catch (final RuntimeException e) {
       LOG.error("Unrecoverable failure while sending print job to chrome instance.", e);
       throw new RuntimeException("Could not finish PDF export.", e);
     } finally {
@@ -208,6 +208,7 @@ public class ExportJob {
       try {
         Thread.sleep(4000);
       } catch (final InterruptedException e) {
+        Thread.currentThread().interrupt();
         // Eat
       }
     });
