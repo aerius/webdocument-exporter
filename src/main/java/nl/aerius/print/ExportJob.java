@@ -51,6 +51,7 @@ public class ExportJob {
   private String name;
 
   private Consumer<DevToolsDriver> waitForComplete;
+  private Map<String, Object> driverOptions = new HashMap<>();
 
   private boolean saved;
 
@@ -213,6 +214,15 @@ public class ExportJob {
   }
 
   /**
+   * Add more driver options, see {@link com.intuit.karate.driver.DriverOptions} for available options.
+   * @param driverOptions additional driver options
+   */
+  public ExportJob driverOptions(final Map<String, Object> driverOptions) {
+    this.driverOptions = driverOptions;
+    return this;
+  }
+
+  /**
    * TODO Provide graceful failure functionality
    */
   private void waitForComplete(final DevToolsDriver driver) {
@@ -239,7 +249,7 @@ public class ExportJob {
   }
 
   private DevToolsDriver fetchChrome() {
-    final Map<String, Object> options = new HashMap<>();
+    final Map<String, Object> options = new HashMap<>(driverOptions);
     options.put("start", false);
     options.put("headless", true);
     options.put("host", host);
