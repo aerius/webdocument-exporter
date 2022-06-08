@@ -38,7 +38,7 @@ public class QuittableChrome extends DevToolsDriver {
 
     // Fetch the page ID
     id = res.jsonPath("$.id").asString();
-    LOG.info("Page ID created: ", id);
+    LOG.info("Page ID created: {}", id);
 
     activate();
     enablePageEvents();
@@ -79,10 +79,13 @@ public class QuittableChrome extends DevToolsDriver {
 
   @Override
   public void quit() {
-    LOG.info("Closing page ID " + id);
-
-    final Http http = options.getHttp();
-    Command.waitForHttp(http.urlBase);
-    http.path("json", "close", id).get();
+    try {
+      LOG.info("Closing page ID: {}", id);
+      final Http http = options.getHttp();
+      Command.waitForHttp(http.urlBase);
+      http.path("json", "close", id).get();
+    } finally {
+      super.quit();
+    }
   }
 }
