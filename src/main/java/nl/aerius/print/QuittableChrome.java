@@ -23,9 +23,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.intuit.karate.Http;
-import com.intuit.karate.Http.Response;
+import com.intuit.karate.Suite;
+import com.intuit.karate.core.Feature;
+import com.intuit.karate.core.FeatureRuntime;
+import com.intuit.karate.core.FeatureSection;
+import com.intuit.karate.core.Scenario;
+import com.intuit.karate.core.ScenarioEngine;
+import com.intuit.karate.core.ScenarioRuntime;
 import com.intuit.karate.driver.DevToolsDriver;
 import com.intuit.karate.driver.DriverOptions;
+import com.intuit.karate.http.HttpClientFactory;
+import com.intuit.karate.http.Response;
 import com.intuit.karate.shell.Command;
 
 public class QuittableChrome extends DevToolsDriver {
@@ -37,13 +45,12 @@ public class QuittableChrome extends DevToolsDriver {
     super(options, command, webSocketUrl);
 
     // Fetch the page ID
-    id = res.jsonPath("$.id").asString();
+    id = res.json().get("$.id");
     LOG.info("Page ID created: {}", id);
 
     activate();
     enablePageEvents();
     enableRuntimeEvents();
-    enableTargetEvents();
     if (!options.headless) {
       initWindowIdAndState();
     }
@@ -58,11 +65,11 @@ public class QuittableChrome extends DevToolsDriver {
     if (map != null) {
       props.putAll(map);
     }
-
-    final DriverOptions options = new DriverOptions(null, props, null, 9222, null);
+    final ScenarioRuntime runtime = createRuntime();
+    final DriverOptions options = new DriverOptions(props, runtime, 9222, null);
     options.arg("--remote-debugging-port=" + options.port);
     options.arg("--no-first-run");
-    options.arg("--user-data-dir=" + options.workingDirPath);
+    options.arg("--user-data-dir=" + options.workingDir.getAbsolutePath());
     options.arg("--disable-popup-blocking");
 
     if (options.headless) {
@@ -71,10 +78,26 @@ public class QuittableChrome extends DevToolsDriver {
     // Create a page
     final Http http = options.getHttp();
     Command.waitForHttp(http.urlBase);
-    final Http.Response res = http.path("json", "new").get();
+    final Response res = http.path("json", "new").get();
 
-    final String webSocketUrl = res.jsonPath("$.webSocketDebuggerUrl").asString();
+    final String webSocketUrl = res.json().get("$.webSocketDebuggerUrl");
     return new QuittableChrome(res, options, null, webSocketUrl);
+  }
+
+  private static synchronized ScenarioRuntime createRuntime() {
+    if (ScenarioEngine.get() == null) {
+      // Use the bare minimum to construct a runtime/engine.
+      final Feature dummyFeature = Feature.read(QuittableChrome.class.getResource("dummy.feature").toString());
+      final FeatureRuntime featureRuntime = FeatureRuntime.of(Suite.forTempUse(HttpClientFactory.DEFAULT), dummyFeature, null);
+      final FeatureSection section = new FeatureSection();
+      section.setIndex(-1);
+      final Scenario dummyScenario = new Scenario(dummyFeature, section, -1);
+      section.setScenario(dummyScenario);
+      final ScenarioRuntime runtime = new ScenarioRuntime(featureRuntime, dummyScenario);
+      final ScenarioEngine engine = new ScenarioEngine(runtime, new HashMap<>());
+      ScenarioEngine.set(engine);
+    }
+    return ScenarioEngine.get().runtime;
   }
 
   @Override
