@@ -25,10 +25,9 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.intuit.karate.Config;
 import com.intuit.karate.FileUtils;
+import com.intuit.karate.core.Config;
 import com.intuit.karate.driver.DevToolsDriver;
-import com.intuit.karate.driver.MissingElement;
 
 import nl.aerius.pdf.TimeoutException;
 
@@ -192,7 +191,7 @@ public class ExportJob {
   public ExportJob completeOrFailViaIndicator() {
     return waitForComplete(chrome -> {
       chrome.waitForAny("#complete-indicator", "#failure-indicator");
-      if (!(chrome.exists("#failure-indicator") instanceof MissingElement)) {
+      if (chrome.exists("#failure-indicator")) {
         // Assume we're crashing with a TimeoutException (for now)
         throw new TimeoutException();
       }
