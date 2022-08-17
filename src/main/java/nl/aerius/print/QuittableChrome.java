@@ -87,7 +87,7 @@ public class QuittableChrome extends DevToolsDriver {
   private static synchronized ScenarioRuntime createRuntime() {
     if (ScenarioEngine.get() == null) {
       // Use the bare minimum to construct a runtime/engine.
-      final Feature dummyFeature = Feature.read(QuittableChrome.class.getResource("dummy.feature").toString());
+      final Feature dummyFeature = Feature.read("classpath:/nl/aerius/print/dummy.feature");
       final FeatureRuntime featureRuntime = FeatureRuntime.of(Suite.forTempUse(HttpClientFactory.DEFAULT), dummyFeature, null);
       final FeatureSection section = new FeatureSection();
       section.setIndex(-1);
