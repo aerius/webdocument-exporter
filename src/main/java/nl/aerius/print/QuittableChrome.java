@@ -24,7 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import com.intuit.karate.Http;
 import com.intuit.karate.Suite;
+import com.intuit.karate.core.Config;
 import com.intuit.karate.core.Feature;
+import com.intuit.karate.core.FeatureCall;
 import com.intuit.karate.core.FeatureRuntime;
 import com.intuit.karate.core.FeatureSection;
 import com.intuit.karate.core.Scenario;
@@ -78,7 +80,7 @@ public class QuittableChrome extends DevToolsDriver {
     // Create a page
     final Http http = options.getHttp();
     Command.waitForHttp(http.urlBase);
-    final Response res = http.path("json", "new").get();
+    final Response res = http.path("json", "new").put(null);
 
     final String webSocketUrl = res.json().get("$.webSocketDebuggerUrl");
     return new QuittableChrome(res, options, null, webSocketUrl);
@@ -88,13 +90,14 @@ public class QuittableChrome extends DevToolsDriver {
     if (ScenarioEngine.get() == null) {
       // Use the bare minimum to construct a runtime/engine.
       final Feature dummyFeature = Feature.read("classpath:/nl/aerius/print/dummy.feature");
-      final FeatureRuntime featureRuntime = FeatureRuntime.of(Suite.forTempUse(HttpClientFactory.DEFAULT), dummyFeature, null);
+      final FeatureCall dummyFeatureCall = new FeatureCall(dummyFeature);
+      final FeatureRuntime featureRuntime = FeatureRuntime.of(Suite.forTempUse(HttpClientFactory.DEFAULT), dummyFeatureCall, null);
       final FeatureSection section = new FeatureSection();
       section.setIndex(-1);
       final Scenario dummyScenario = new Scenario(dummyFeature, section, -1);
       section.setScenario(dummyScenario);
       final ScenarioRuntime runtime = new ScenarioRuntime(featureRuntime, dummyScenario);
-      final ScenarioEngine engine = new ScenarioEngine(runtime, new HashMap<>());
+      final ScenarioEngine engine = new ScenarioEngine(new Config(), runtime, new HashMap<>(), new com.intuit.karate.Logger(QuittableChrome.class));
       ScenarioEngine.set(engine);
     }
     return ScenarioEngine.get().runtime;
