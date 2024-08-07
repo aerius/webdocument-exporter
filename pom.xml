@@ -64,7 +64,7 @@
 
     <aerius-tools.version>1.1.1</aerius-tools.version>
     <spotless.version>2.5.0</spotless.version>
-    <jacoco.version>0.8.6</jacoco.version>
+    <jacoco.version>0.8.12</jacoco.version>
     <sonar.projectKey>aerius_webdocument-exporter</sonar.projectKey>
     <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
     <sonar.organization>aerius</sonar.organization>
