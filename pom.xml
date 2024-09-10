@@ -21,7 +21,7 @@
 
   <groupId>nl.aerius</groupId>
   <artifactId>webdocument-exporter</artifactId>
-  <version>1.3.0</version>
+  <version>1.4.0-SNAPSHOT</version>
 
   <name>webdocument-exporter</name>
 
