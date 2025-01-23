@@ -31,6 +31,7 @@ import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfDocumentInfo;
@@ -39,8 +40,8 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.property.TextAlignment;
-import com.itextpdf.layout.property.VerticalAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.VerticalAlignment;
 
 import nl.aerius.util.TriConsumer;
 
@@ -83,7 +84,7 @@ public class PdfProcessingHandle {
     try (final InputStream is = PdfProcessingHandle.class.getClassLoader().getResourceAsStream(font)) {
       final byte[] fontBytes = is.readAllBytes();
 
-      pdfFont = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, true);
+      pdfFont = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, EmbeddingStrategy.PREFER_EMBEDDED);
     } catch (final IOException e) {
       LOG.info("Could not fetch font while processing PDF.", e);
       throw new UncheckedIOException(e);
