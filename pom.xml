@@ -59,11 +59,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <karate.intuit.version>1.4.0</karate.intuit.version>
-    <itext.version>7.1.16</itext.version>
+    <karate.version>1.5.1</karate.version>
+    <itext.version>9.0.0</itext.version>
 
     <aerius-tools.version>1.1.1</aerius-tools.version>
-    <spotless.version>2.5.0</spotless.version>
+    <spotless.version>2.44.2</spotless.version>
     <jacoco.version>0.8.12</jacoco.version>
     <sonar.projectKey>aerius_webdocument-exporter</sonar.projectKey>
     <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
@@ -81,9 +81,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.intuit.karate</groupId>
+      <groupId>io.karatelabs</groupId>
       <artifactId>karate-core</artifactId>
-      <version>${karate.intuit.version}</version>
+      <version>${karate.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>
@@ -92,9 +92,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.intuit.karate</groupId>
+      <groupId>io.karatelabs</groupId>
       <artifactId>karate-junit5</artifactId>
-      <version>${karate.intuit.version}</version>
+      <version>${karate.version}</version>
       <scope>test</scope>
     </dependency>
 
