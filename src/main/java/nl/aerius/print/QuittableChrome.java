@@ -73,6 +73,7 @@ public class QuittableChrome extends DevToolsDriver {
     options.arg("--no-first-run");
     options.arg("--user-data-dir=" + options.workingDir.getAbsolutePath());
     options.arg("--disable-popup-blocking");
+    options.arg("--disable-dev-shm-usage");
 
     if (options.headless) {
       options.arg("--headless");
