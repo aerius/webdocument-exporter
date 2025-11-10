@@ -22,5 +22,3 @@ import com.intuit.karate.driver.DevToolsDriver;
 public interface DriverHook {
   void accept(DevToolsDriver driver, String url, String phase, Throwable cause);
 }
-
-
