@@ -263,14 +263,8 @@ public class ExportJob {
       if (completeHook != null) {
         try {
           completeHook.accept(chrome, url, "complete", null);
-        } catch (final RuntimeException hookEx) {
-          if (failureHook != null) {
-            try {
-              failureHook.accept(chrome, url, "completeHook", hookEx);
-            } catch (final RuntimeException ignored) {
-            }
-          }
-          throw new RuntimeException("completeHook failed.", hookEx);
+        } catch (final RuntimeException ignored) {
+          LOG.warn("Failure during completeHook execution, ignoring.", ignored);
         }
       }
 
@@ -280,6 +274,7 @@ public class ExportJob {
         try {
           failureHook.accept(chrome, url, failurePhase, e);
         } catch (final RuntimeException ignored) {
+          LOG.warn("Failure during failureHook execution, ignoring.", ignored);
         }
       }
       LOG.error("Unrecoverable failure while executing export.", e);
