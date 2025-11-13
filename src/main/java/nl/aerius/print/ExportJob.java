@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,9 @@ public class ExportJob {
   private Map<String, Object> driverOptions = new HashMap<>();
 
   private boolean saved;
+
+  private DriverHook completeHook;
+  private DriverHook failureHook;
 
   public static ExportJob create() {
     return new ExportJob();
@@ -121,24 +125,8 @@ public class ExportJob {
 
     LOG.info("Exporting graphic from: {}", url);
 
-    final DevToolsDriver chrome = fetchChrome();
-    try {
-      chrome.setUrl(url);
-
-      // Set a default wait
-      if (waitForComplete == null) {
-        completeViaSleep();
-      }
-      waitForComplete(chrome);
-
-      name = handle + ".png";
-      exportResult = chrome.screenshot();
-    } catch (final RuntimeException e) {
-      LOG.error("Unrecoverable failure while sending snapshot job to chrome instance.", e);
-      throw new RuntimeException("Could not finish web document snapshot.", e);
-    } finally {
-      chrome.quit();
-    }
+    name = handle + ".png";
+    exportResult = runExport(true, d -> d.screenshot(), "snapshot");
 
     return new SnapshotJob(this);
   }
@@ -154,23 +142,8 @@ public class ExportJob {
     ensureHandle();
     exported = true;
 
-    final DevToolsDriver chrome = fetchChrome();
-    try {
-      chrome.setUrl(url);
-
-      if (waitForComplete == null) {
-        completeViaIndicator();
-      }
-      waitForComplete(chrome);
-
-      name = handle + ".pdf";
-      exportResult = chrome.pdf(printParams);
-    } catch (final RuntimeException e) {
-      LOG.error("Unrecoverable failure while sending print job to chrome instance.", e);
-      throw new RuntimeException("Could not finish PDF export.", e);
-    } finally {
-      chrome.quit();
-    }
+    name = handle + ".pdf";
+    exportResult = runExport(false, d -> d.pdf(printParams), "print");
 
     return new PrintJob(this);
   }
@@ -222,6 +195,18 @@ public class ExportJob {
     return this;
   }
 
+  public ExportJob completeHook(final DriverHook hook) {
+    checkExported();
+    this.completeHook = hook;
+    return this;
+  }
+
+  public ExportJob failureHook(final DriverHook hook) {
+    checkExported();
+    this.failureHook = hook;
+    return this;
+  }
+
   /**
    * TODO Provide graceful failure functionality
    */
@@ -258,6 +243,45 @@ public class ExportJob {
     chrome.retry(retryCount);
 
     return chrome;
+  }
+
+  private byte[] runExport(final boolean useSleepWait, final Function<DevToolsDriver, byte[]> exporter,
+      final String failurePhase) {
+    final DevToolsDriver chrome = fetchChrome();
+    try {
+      chrome.setUrl(url);
+
+      if (waitForComplete == null) {
+        if (useSleepWait) {
+          completeViaSleep();
+        } else {
+          completeViaIndicator();
+        }
+      }
+      waitForComplete(chrome);
+
+      if (completeHook != null) {
+        try {
+          completeHook.accept(chrome, url, "complete", null);
+        } catch (final RuntimeException ignored) {
+          LOG.warn("Failure during completeHook execution, ignoring.", ignored);
+        }
+      }
+
+      return exporter.apply(chrome);
+    } catch (final RuntimeException e) {
+      if (failureHook != null) {
+        try {
+          failureHook.accept(chrome, url, failurePhase, e);
+        } catch (final RuntimeException ignored) {
+          LOG.warn("Failure during failureHook execution, ignoring.", ignored);
+        }
+      }
+      LOG.error("Unrecoverable failure while executing export.", e);
+      throw e;
+    } finally {
+      chrome.quit();
+    }
   }
 
   public String outputDocument() {
