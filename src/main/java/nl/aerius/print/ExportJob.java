@@ -55,6 +55,7 @@ public class ExportJob {
 
   private boolean saved;
 
+  // Hooks for custom behavior on complete and failure before the driver quits
   private DriverHook completeHook;
   private DriverHook failureHook;
 
@@ -207,9 +208,6 @@ public class ExportJob {
     return this;
   }
 
-  /**
-   * TODO Provide graceful failure functionality
-   */
   private void waitForComplete(final DevToolsDriver driver) {
     waitForComplete.accept(driver);
   }
@@ -269,18 +267,21 @@ public class ExportJob {
       }
 
       return exporter.apply(chrome);
+    } catch (final FailureIndicatorException e) {
+      fail(chrome, failurePhase, e);
+      throw e;
     } catch (final RuntimeException e) {
-      if (failureHook != null) {
-        try {
-          failureHook.accept(chrome, url, failurePhase, e);
-        } catch (final RuntimeException ignored) {
-          LOG.warn("Failure during failureHook execution, ignoring.", ignored);
-        }
-      }
+      fail(chrome, failurePhase, e);
       LOG.error("Unrecoverable failure while executing export.", e);
       throw e;
     } finally {
       chrome.quit();
+    }
+  }
+
+  private void fail(final DevToolsDriver chrome, final String failurePhase, final Throwable cause) {
+    if (failureHook != null) {
+      failureHook.accept(chrome, url, failurePhase, cause);
     }
   }
 
