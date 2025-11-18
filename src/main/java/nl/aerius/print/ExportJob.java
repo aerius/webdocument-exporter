@@ -30,7 +30,7 @@ import com.intuit.karate.FileUtils;
 import com.intuit.karate.core.Config;
 import com.intuit.karate.driver.DevToolsDriver;
 
-import nl.aerius.pdf.TimeoutException;
+import nl.aerius.pdf.FailureIndicatorException;
 
 public class ExportJob {
   private static final Logger LOG = LoggerFactory.getLogger(ExportJob.class);
@@ -163,16 +163,16 @@ public class ExportJob {
 
   public ExportJob completeOrFailViaIndicator() {
     return waitForComplete(chrome -> {
-      chrome.waitForAny("#complete-indicator", "#failure-indicator");
-      if (chrome.exists("#failure-indicator")) {
-        // Assume we're crashing with a TimeoutException (for now)
-        throw new TimeoutException();
+      chrome.waitFor("#complete-indicator");
+      if (chrome.exists("#complete-indicator.failure")) {
+        throw new FailureIndicatorException();
       }
     });
   }
 
+  @Deprecated
   public ExportJob completeViaIndicator() {
-    return waitForComplete(chrome -> chrome.waitFor("#complete-indicator"));
+    return completeOrFailViaIndicator();
   }
 
   public ExportJob completeViaSleep() {
