@@ -30,7 +30,7 @@ import com.intuit.karate.FileUtils;
 import com.intuit.karate.core.Config;
 import com.intuit.karate.driver.DevToolsDriver;
 
-import nl.aerius.pdf.TimeoutException;
+import nl.aerius.pdf.FailureIndicatorException;
 
 public class ExportJob {
   private static final Logger LOG = LoggerFactory.getLogger(ExportJob.class);
@@ -55,6 +55,7 @@ public class ExportJob {
 
   private boolean saved;
 
+  // Hooks for custom behavior on complete and failure before the driver quits
   private DriverHook completeHook;
   private DriverHook failureHook;
 
@@ -163,16 +164,16 @@ public class ExportJob {
 
   public ExportJob completeOrFailViaIndicator() {
     return waitForComplete(chrome -> {
-      chrome.waitForAny("#complete-indicator", "#failure-indicator");
-      if (chrome.exists("#failure-indicator")) {
-        // Assume we're crashing with a TimeoutException (for now)
-        throw new TimeoutException();
+      chrome.waitFor("#complete-indicator");
+      if (chrome.exists("#complete-indicator.failure")) {
+        throw new FailureIndicatorException();
       }
     });
   }
 
+  @Deprecated
   public ExportJob completeViaIndicator() {
-    return waitForComplete(chrome -> chrome.waitFor("#complete-indicator"));
+    return completeOrFailViaIndicator();
   }
 
   public ExportJob completeViaSleep() {
@@ -207,9 +208,6 @@ public class ExportJob {
     return this;
   }
 
-  /**
-   * TODO Provide graceful failure functionality
-   */
   private void waitForComplete(final DevToolsDriver driver) {
     waitForComplete.accept(driver);
   }
@@ -269,18 +267,21 @@ public class ExportJob {
       }
 
       return exporter.apply(chrome);
+    } catch (final FailureIndicatorException e) {
+      fail(chrome, failurePhase, e);
+      throw e;
     } catch (final RuntimeException e) {
-      if (failureHook != null) {
-        try {
-          failureHook.accept(chrome, url, failurePhase, e);
-        } catch (final RuntimeException ignored) {
-          LOG.warn("Failure during failureHook execution, ignoring.", ignored);
-        }
-      }
+      fail(chrome, failurePhase, e);
       LOG.error("Unrecoverable failure while executing export.", e);
       throw e;
     } finally {
       chrome.quit();
+    }
+  }
+
+  private void fail(final DevToolsDriver chrome, final String failurePhase, final Throwable cause) {
+    if (failureHook != null) {
+      failureHook.accept(chrome, url, failurePhase, cause);
     }
   }
 
