@@ -17,27 +17,30 @@
 package nl.aerius.print;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
+import java.net.Socket;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
  * Integration test that verifies network failure tracking against a real Chrome instance.
+ * Skips automatically when Chrome or the test server are not available.
  *
- * <p>Requires a local test server and Chrome. Run in order:
+ * <p>To run, start in order:
  * <ol>
  *   <li>{@code node test-server.js}</li>
  *   <li>{@code google-chrome --headless --remote-debugging-port=9222 --no-first-run --disable-gpu --remote-allow-origins=*}</li>
- *   <li>{@code mvn verify -Dit.test=NetworkFailureTrackingIT}</li>
+ *   <li>{@code mvn test -Dtest=NetworkFailureTrackingTest}</li>
  * </ol>
  *
  * <p>The test server (test-server.js in the project root) serves a page that triggers
  * both network-level failures and HTTP error responses (500, 403) with bodies.
  */
-class NetworkFailureTrackingIT {
+class NetworkFailureTrackingTest {
 
   /**
    * Navigates to the test server page which triggers:
@@ -48,9 +51,11 @@ class NetworkFailureTrackingIT {
    * </ul>
    * Verifies that all failures are captured with the expected data.
    */
-  @Disabled("Requires a running Chrome instance and test server - run manually")
   @Test
   void networkFailureIsCaptured() throws InterruptedException {
+    assumeTrue(isPortOpen(9222), "Chrome not running on port 9222");
+    assumeTrue(isPortOpen(3456), "Test server not running on port 3456");
+
     final Map<String, Object> options = Map.of(
         "start", false,
         "headless", true);
@@ -79,9 +84,17 @@ class NetworkFailureTrackingIT {
             + " body=" + failure.responseBody());
       }
 
-      assertFalse(failures.isEmpty(), "Expected at least one network failure from fetch to dead port");
+      assertFalse(failures.isEmpty(), "Expected at least one network failure");
     } finally {
       chrome.quit();
+    }
+  }
+
+  private static boolean isPortOpen(final int port) {
+    try (Socket socket = new Socket("localhost", port)) {
+      return true;
+    } catch (final IOException e) {
+      return false;
     }
   }
 }
