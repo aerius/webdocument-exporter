@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -47,6 +48,7 @@ class NetworkFailureTrackingIT {
    * </ul>
    * Verifies that all failures are captured with the expected data.
    */
+  @Disabled("Requires a running Chrome instance and test server - run manually")
   @Test
   void networkFailureIsCaptured() throws InterruptedException {
     final Map<String, Object> options = Map.of(
