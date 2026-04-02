@@ -231,7 +231,7 @@ public class ExportJob {
     return exportResult;
   }
 
-  private DevToolsDriver fetchChrome() {
+  private QuittableChrome fetchChrome() {
     final Map<String, Object> options = new HashMap<>(driverOptions);
     options.put("start", false);
     options.put("headless", true);
@@ -245,7 +245,7 @@ public class ExportJob {
 
   private byte[] runExport(final boolean useSleepWait, final Function<DevToolsDriver, byte[]> exporter,
       final String failurePhase) {
-    final DevToolsDriver chrome = fetchChrome();
+    final QuittableChrome chrome = fetchChrome();
     try {
       chrome.setUrl(url);
 
@@ -279,7 +279,11 @@ public class ExportJob {
     }
   }
 
-  private void fail(final DevToolsDriver chrome, final String failurePhase, final Throwable cause) {
+  private void fail(final QuittableChrome chrome, final String failurePhase, final Throwable cause) {
+    for (final NetworkFailure failure : chrome.getNetworkFailures()) {
+      LOG.warn("Network failure during {}: url={} error={} status={} body={}",
+          failurePhase, failure.url(), failure.errorText(), failure.responseStatus(), failure.responseBody());
+    }
     if (failureHook != null) {
       failureHook.accept(chrome, url, failurePhase, cause);
     }

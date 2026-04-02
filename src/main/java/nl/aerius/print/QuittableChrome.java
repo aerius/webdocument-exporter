@@ -17,6 +17,7 @@
 package nl.aerius.print;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ import com.intuit.karate.core.Scenario;
 import com.intuit.karate.core.ScenarioEngine;
 import com.intuit.karate.core.ScenarioRuntime;
 import com.intuit.karate.driver.DevToolsDriver;
+import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.DriverOptions;
 import com.intuit.karate.http.HttpClientFactory;
 import com.intuit.karate.http.Response;
@@ -42,6 +44,7 @@ public class QuittableChrome extends DevToolsDriver {
   private static final Logger LOG = LoggerFactory.getLogger(QuittableChrome.class);
 
   private final String id;
+  private final NetworkFailureTracker networkFailureTracker = new NetworkFailureTracker();
 
   public QuittableChrome(final Response res, final DriverOptions options, final Command command, final String webSocketUrl) {
     super(options, command, webSocketUrl);
@@ -53,6 +56,7 @@ public class QuittableChrome extends DevToolsDriver {
     activate();
     enablePageEvents();
     enableRuntimeEvents();
+    enableNetworkEvents();
     if (!options.headless) {
       initWindowIdAndState();
     }
@@ -102,6 +106,40 @@ public class QuittableChrome extends DevToolsDriver {
       ScenarioEngine.set(engine);
     }
     return ScenarioEngine.get().runtime;
+  }
+
+  @Override
+  public void receive(final DevToolsMessage dtm) {
+    if (dtm.methodIs("Network.requestWillBeSent")) {
+      networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"));
+    } else if (dtm.methodIs("Network.responseReceived")) {
+      networkFailureTracker.onResponse(dtm.getParam("requestId"), dtm.getParam("response.status"));
+    } else if (dtm.methodIs("Network.loadingFailed")) {
+      networkFailureTracker.onLoadingFailed(dtm.getParam("requestId"), dtm.getParam("errorText"), dtm.getParam("type"),
+          dtm.getParam("canceled"));
+    }
+    super.receive(dtm);
+  }
+
+  public List<NetworkFailure> getNetworkFailures() {
+    return networkFailureTracker.getFailures(this::tryFetchResponseBody);
+  }
+
+  private String tryFetchResponseBody(final String requestId) {
+    if (requestId == null) {
+      return null;
+    }
+    try {
+      final DevToolsMessage dtm = method("Network.getResponseBody").param("requestId", requestId).send();
+      final Boolean base64Encoded = dtm.getResultVariable("base64Encoded").getValue();
+      if (Boolean.TRUE.equals(base64Encoded)) {
+        return "<base64-encoded binary content>";
+      }
+      return dtm.getResultVariable("body").getValue();
+    } catch (final RuntimeException e) {
+      LOG.trace("Could not fetch response body for requestId={}: {}", requestId, e.getMessage());
+      return null;
+    }
   }
 
   @Override
