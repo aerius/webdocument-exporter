@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Integration test that verifies network failure tracking against a real Chrome instance.
@@ -41,6 +43,8 @@ import org.junit.jupiter.api.Test;
  * both network-level failures and HTTP error responses (500, 403) with bodies.
  */
 class NetworkFailureTrackingTest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(NetworkFailureTrackingTest.class);
 
   /**
    * Navigates to the test server page which triggers:
@@ -73,15 +77,12 @@ class NetworkFailureTrackingTest {
 
       final List<NetworkFailure> failures = chrome.getNetworkFailures();
 
-      System.out.println("Captured " + failures.size() + " network failure(s):");
+      LOG.info("Captured {} network failure(s):", failures.size());
       for (final NetworkFailure failure : failures) {
-        System.out.println("  url=" + failure.url()
-            + " method=" + failure.method()
-            + " error=" + failure.errorText()
-            + " type=" + failure.resourceType()
-            + " canceled=" + failure.canceled()
-            + " status=" + failure.responseStatus()
-            + " body=" + failure.responseBody());
+        LOG.info("  url={} method={} error={} type={} canceled={} status={} referer={} body={}",
+            failure.url(), failure.method(), failure.errorText(),
+            failure.resourceType(), failure.canceled(),
+            failure.responseStatus(), failure.referer(), failure.responseBody());
       }
 
       assertFalse(failures.isEmpty(), "Expected at least one network failure");

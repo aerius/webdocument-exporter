@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 public class NetworkFailureTracker {
   private static final Logger LOG = LoggerFactory.getLogger(NetworkFailureTracker.class);
 
-  private record RequestData(String url, String method) {}
+  private record RequestData(String url, String method, String referer) {}
   private record FailureData(String requestId, String errorText, String resourceType, boolean canceled) {}
 
   private final Map<String, RequestData> requests = new ConcurrentHashMap<>();
@@ -38,9 +38,9 @@ public class NetworkFailureTracker {
   private final List<FailureData> failures = new CopyOnWriteArrayList<>();
   private final Set<String> httpErrorRequestIds = ConcurrentHashMap.newKeySet();
 
-  public void onRequest(final String requestId, final String url, final String method) {
+  public void onRequest(final String requestId, final String url, final String method, final String referer) {
     if (requestId != null) {
-      requests.put(requestId, new RequestData(url, method));
+      requests.put(requestId, new RequestData(url, method, referer));
     }
   }
 
@@ -65,8 +65,9 @@ public class NetworkFailureTracker {
     }
 
     final RequestData req = requestId != null ? requests.get(requestId) : null;
-    LOG.warn("Network request failed: url={} error={} type={} canceled={}",
-        req != null ? req.url() : "unknown", errorText, resourceType, isCanceled);
+    LOG.warn("Network request failed: url={} error={} type={} canceled={} referer={}",
+        req != null ? req.url() : "unknown", errorText, resourceType, isCanceled,
+        req != null ? req.referer() : "unknown");
   }
 
   public List<NetworkFailure> getFailures(final Function<String, String> bodyFetcher) {
@@ -84,7 +85,8 @@ public class NetworkFailureTracker {
           failure.resourceType(),
           failure.canceled(),
           status,
-          body));
+          body,
+          req != null ? req.referer() : null));
     }
 
     // HTTP error responses (4xx/5xx) that didn't also trigger loadingFailed
@@ -99,7 +101,8 @@ public class NetworkFailureTracker {
           null,
           false,
           status,
-          body));
+          body,
+          req != null ? req.referer() : null));
     }
 
     return result;

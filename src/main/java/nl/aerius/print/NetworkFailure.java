@@ -23,5 +23,6 @@ public record NetworkFailure(
     String resourceType,
     boolean canceled,
     Integer responseStatus,
-    String responseBody) {
+    String responseBody,
+    String referer) {
 }

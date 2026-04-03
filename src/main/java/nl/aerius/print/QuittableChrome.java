@@ -119,7 +119,8 @@ public class QuittableChrome extends DevToolsDriver {
   public void receive(final DevToolsMessage dtm) {
     if (trackNetworkFailures) {
       if (dtm.methodIs("Network.requestWillBeSent")) {
-        networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"));
+        networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"),
+            dtm.getParam("request.headers.Referer"));
       } else if (dtm.methodIs("Network.responseReceived")) {
         networkFailureTracker.onResponse(dtm.getParam("requestId"), dtm.getParam("response.status"));
       } else if (dtm.methodIs("Network.loadingFailed")) {

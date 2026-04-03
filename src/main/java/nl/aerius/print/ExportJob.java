@@ -289,8 +289,8 @@ public class ExportJob {
 
   private void fail(final QuittableChrome chrome, final String failurePhase, final Throwable cause) {
     for (final NetworkFailure failure : chrome.getNetworkFailures()) {
-      LOG.warn("Network failure during {}: url={} error={} status={} body={}",
-          failurePhase, failure.url(), failure.errorText(), failure.responseStatus(), failure.responseBody());
+      LOG.warn("Network failure during {}: url={} error={} status={} referer={} body={}",
+          failurePhase, failure.url(), failure.errorText(), failure.responseStatus(), failure.referer(), failure.responseBody());
     }
     if (failureHook != null) {
       failureHook.accept(chrome, url, failurePhase, cause);
