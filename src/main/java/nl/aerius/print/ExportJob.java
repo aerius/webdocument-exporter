@@ -210,9 +210,9 @@ public class ExportJob {
     return this;
   }
 
-  public ExportJob trackNetworkFailures() {
+  public ExportJob trackNetworkFailures(final boolean trackNetworkFailures) {
     checkExported();
-    this.trackNetworkFailures = true;
+    this.trackNetworkFailures = trackNetworkFailures;
     return this;
   }
 
