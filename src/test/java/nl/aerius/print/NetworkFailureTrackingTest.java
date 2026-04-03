@@ -60,7 +60,7 @@ class NetworkFailureTrackingTest {
         "start", false,
         "headless", true);
 
-    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
+    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options, true);
     try {
       // Navigate to local test server that serves a page making same-origin fetches:
       // /error - 500 with text body

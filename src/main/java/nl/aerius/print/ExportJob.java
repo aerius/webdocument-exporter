@@ -55,6 +55,8 @@ public class ExportJob {
 
   private boolean saved;
 
+  private boolean trackNetworkFailures;
+
   // Hooks for custom behavior on complete and failure before the driver quits
   private DriverHook completeHook;
   private DriverHook failureHook;
@@ -208,6 +210,12 @@ public class ExportJob {
     return this;
   }
 
+  public ExportJob trackNetworkFailures() {
+    checkExported();
+    this.trackNetworkFailures = true;
+    return this;
+  }
+
   private void waitForComplete(final DevToolsDriver driver) {
     waitForComplete.accept(driver);
   }
@@ -237,7 +245,7 @@ public class ExportJob {
     options.put("headless", true);
     options.put("host", host);
 
-    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
+    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options, trackNetworkFailures);
     chrome.retry(retryCount);
 
     return chrome;

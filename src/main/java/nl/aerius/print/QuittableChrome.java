@@ -44,10 +44,15 @@ public class QuittableChrome extends DevToolsDriver {
   private static final Logger LOG = LoggerFactory.getLogger(QuittableChrome.class);
 
   private final String id;
-  private final NetworkFailureTracker networkFailureTracker = new NetworkFailureTracker();
+  private final boolean trackNetworkFailures;
+  private final NetworkFailureTracker networkFailureTracker;
 
-  public QuittableChrome(final Response res, final DriverOptions options, final Command command, final String webSocketUrl) {
+  public QuittableChrome(final Response res, final DriverOptions options, final Command command, final String webSocketUrl,
+      final boolean trackNetworkFailures) {
     super(options, command, webSocketUrl);
+
+    this.trackNetworkFailures = trackNetworkFailures;
+    this.networkFailureTracker = trackNetworkFailures ? new NetworkFailureTracker() : null;
 
     // Fetch the page ID
     id = res.json().get("$.id");
@@ -56,17 +61,19 @@ public class QuittableChrome extends DevToolsDriver {
     activate();
     enablePageEvents();
     enableRuntimeEvents();
-    enableNetworkEvents();
+    if (trackNetworkFailures) {
+      enableNetworkEvents();
+    }
     if (!options.headless) {
       initWindowIdAndState();
     }
   }
 
   public static QuittableChrome prepareAndStart() {
-    return prepareAndStart(null);
+    return prepareAndStart(null, false);
   }
 
-  public static QuittableChrome prepareAndStart(final Map<String, Object> map) {
+  public static QuittableChrome prepareAndStart(final Map<String, Object> map, final boolean trackNetworkFailures) {
     final Map<String, Object> props = new HashMap<>();
     if (map != null) {
       props.putAll(map);
@@ -88,7 +95,7 @@ public class QuittableChrome extends DevToolsDriver {
     final Response res = http.path("json", "new").put(null);
 
     final String webSocketUrl = res.json().get("$.webSocketDebuggerUrl");
-    return new QuittableChrome(res, options, null, webSocketUrl);
+    return new QuittableChrome(res, options, null, webSocketUrl, trackNetworkFailures);
   }
 
   private static synchronized ScenarioRuntime createRuntime() {
@@ -110,18 +117,23 @@ public class QuittableChrome extends DevToolsDriver {
 
   @Override
   public void receive(final DevToolsMessage dtm) {
-    if (dtm.methodIs("Network.requestWillBeSent")) {
-      networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"));
-    } else if (dtm.methodIs("Network.responseReceived")) {
-      networkFailureTracker.onResponse(dtm.getParam("requestId"), dtm.getParam("response.status"));
-    } else if (dtm.methodIs("Network.loadingFailed")) {
-      networkFailureTracker.onLoadingFailed(dtm.getParam("requestId"), dtm.getParam("errorText"), dtm.getParam("type"),
-          dtm.getParam("canceled"));
+    if (trackNetworkFailures) {
+      if (dtm.methodIs("Network.requestWillBeSent")) {
+        networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"));
+      } else if (dtm.methodIs("Network.responseReceived")) {
+        networkFailureTracker.onResponse(dtm.getParam("requestId"), dtm.getParam("response.status"));
+      } else if (dtm.methodIs("Network.loadingFailed")) {
+        networkFailureTracker.onLoadingFailed(dtm.getParam("requestId"), dtm.getParam("errorText"), dtm.getParam("type"),
+            dtm.getParam("canceled"));
+      }
     }
     super.receive(dtm);
   }
 
   public List<NetworkFailure> getNetworkFailures() {
+    if (!trackNetworkFailures) {
+      return List.of();
+    }
     return networkFailureTracker.getFailures(this::tryFetchResponseBody);
   }
 
