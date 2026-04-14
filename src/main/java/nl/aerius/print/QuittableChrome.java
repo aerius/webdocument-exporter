@@ -17,6 +17,7 @@
 package nl.aerius.print;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ import com.intuit.karate.core.Scenario;
 import com.intuit.karate.core.ScenarioEngine;
 import com.intuit.karate.core.ScenarioRuntime;
 import com.intuit.karate.driver.DevToolsDriver;
+import com.intuit.karate.driver.DevToolsMessage;
 import com.intuit.karate.driver.DriverOptions;
 import com.intuit.karate.http.HttpClientFactory;
 import com.intuit.karate.http.Response;
@@ -42,9 +44,15 @@ public class QuittableChrome extends DevToolsDriver {
   private static final Logger LOG = LoggerFactory.getLogger(QuittableChrome.class);
 
   private final String id;
+  private final boolean trackNetworkFailures;
+  private final NetworkFailureTracker networkFailureTracker;
 
-  public QuittableChrome(final Response res, final DriverOptions options, final Command command, final String webSocketUrl) {
+  public QuittableChrome(final Response res, final DriverOptions options, final Command command, final String webSocketUrl,
+      final boolean trackNetworkFailures) {
     super(options, command, webSocketUrl);
+
+    this.trackNetworkFailures = trackNetworkFailures;
+    this.networkFailureTracker = trackNetworkFailures ? new NetworkFailureTracker() : null;
 
     // Fetch the page ID
     id = res.json().get("$.id");
@@ -53,16 +61,19 @@ public class QuittableChrome extends DevToolsDriver {
     activate();
     enablePageEvents();
     enableRuntimeEvents();
+    if (trackNetworkFailures) {
+      enableNetworkEvents();
+    }
     if (!options.headless) {
       initWindowIdAndState();
     }
   }
 
   public static QuittableChrome prepareAndStart() {
-    return prepareAndStart(null);
+    return prepareAndStart(null, false);
   }
 
-  public static QuittableChrome prepareAndStart(final Map<String, Object> map) {
+  public static QuittableChrome prepareAndStart(final Map<String, Object> map, final boolean trackNetworkFailures) {
     final Map<String, Object> props = new HashMap<>();
     if (map != null) {
       props.putAll(map);
@@ -84,7 +95,7 @@ public class QuittableChrome extends DevToolsDriver {
     final Response res = http.path("json", "new").put(null);
 
     final String webSocketUrl = res.json().get("$.webSocketDebuggerUrl");
-    return new QuittableChrome(res, options, null, webSocketUrl);
+    return new QuittableChrome(res, options, null, webSocketUrl, trackNetworkFailures);
   }
 
   private static synchronized ScenarioRuntime createRuntime() {
@@ -102,6 +113,46 @@ public class QuittableChrome extends DevToolsDriver {
       ScenarioEngine.set(engine);
     }
     return ScenarioEngine.get().runtime;
+  }
+
+  @Override
+  public void receive(final DevToolsMessage dtm) {
+    if (trackNetworkFailures) {
+      if (dtm.methodIs("Network.requestWillBeSent")) {
+        networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"),
+            dtm.getParam("request.headers.Referer"));
+      } else if (dtm.methodIs("Network.responseReceived")) {
+        networkFailureTracker.onResponse(dtm.getParam("requestId"), dtm.getParam("response.status"));
+      } else if (dtm.methodIs("Network.loadingFailed")) {
+        networkFailureTracker.onLoadingFailed(dtm.getParam("requestId"), dtm.getParam("errorText"), dtm.getParam("type"),
+            dtm.getParam("canceled"));
+      }
+    }
+    super.receive(dtm);
+  }
+
+  public List<NetworkFailure> getNetworkFailures() {
+    if (!trackNetworkFailures) {
+      return List.of();
+    }
+    return networkFailureTracker.getFailures(this::tryFetchResponseBody);
+  }
+
+  private String tryFetchResponseBody(final String requestId) {
+    if (requestId == null) {
+      return null;
+    }
+    try {
+      final DevToolsMessage dtm = method("Network.getResponseBody").param("requestId", requestId).send();
+      final Boolean base64Encoded = dtm.getResultVariable("base64Encoded").getValue();
+      if (Boolean.TRUE.equals(base64Encoded)) {
+        return "<base64-encoded binary content>";
+      }
+      return dtm.getResultVariable("body").getValue();
+    } catch (final RuntimeException e) {
+      LOG.trace("Could not fetch response body for requestId={}: {}", requestId, e.getMessage());
+      return null;
+    }
   }
 
   @Override

@@ -55,6 +55,8 @@ public class ExportJob {
 
   private boolean saved;
 
+  private boolean trackNetworkFailures;
+
   // Hooks for custom behavior on complete and failure before the driver quits
   private DriverHook completeHook;
   private DriverHook failureHook;
@@ -208,6 +210,12 @@ public class ExportJob {
     return this;
   }
 
+  public ExportJob trackNetworkFailures(final boolean trackNetworkFailures) {
+    checkExported();
+    this.trackNetworkFailures = trackNetworkFailures;
+    return this;
+  }
+
   private void waitForComplete(final DevToolsDriver driver) {
     waitForComplete.accept(driver);
   }
@@ -231,13 +239,13 @@ public class ExportJob {
     return exportResult;
   }
 
-  private DevToolsDriver fetchChrome() {
+  private QuittableChrome fetchChrome() {
     final Map<String, Object> options = new HashMap<>(driverOptions);
     options.put("start", false);
     options.put("headless", true);
     options.put("host", host);
 
-    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options);
+    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options, trackNetworkFailures);
     chrome.retry(retryCount);
 
     return chrome;
@@ -245,7 +253,7 @@ public class ExportJob {
 
   private byte[] runExport(final boolean useSleepWait, final Function<DevToolsDriver, byte[]> exporter,
       final String failurePhase) {
-    final DevToolsDriver chrome = fetchChrome();
+    final QuittableChrome chrome = fetchChrome();
     try {
       chrome.setUrl(url);
 
@@ -279,7 +287,11 @@ public class ExportJob {
     }
   }
 
-  private void fail(final DevToolsDriver chrome, final String failurePhase, final Throwable cause) {
+  private void fail(final QuittableChrome chrome, final String failurePhase, final Throwable cause) {
+    for (final NetworkFailure failure : chrome.getNetworkFailures()) {
+      LOG.warn("Network failure during {}: url={} error={} status={} referer={} body={}",
+          failurePhase, failure.url(), failure.errorText(), failure.responseStatus(), failure.referer(), failure.responseBody());
+    }
     if (failureHook != null) {
       failureHook.accept(chrome, url, failurePhase, cause);
     }

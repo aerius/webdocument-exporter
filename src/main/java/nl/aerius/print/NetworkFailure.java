@@ -14,23 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.pdf;
+package nl.aerius.print;
 
-/**
- * Exception thrown when a failure indicator is found in the exported document.
- */
-public class FailureIndicatorException extends TimeoutException {
-  public FailureIndicatorException() {
-    super();
-  }
-
-  public FailureIndicatorException(final String message) {
-    super(message);
-  }
-
-  public FailureIndicatorException(final String message, final Throwable cause) {
-    super(message, cause);
-  }
+public record NetworkFailure(
+    String url,
+    String method,
+    String errorText,
+    String resourceType,
+    boolean canceled,
+    Integer responseStatus,
+    String responseBody,
+    String referer) {
 }
-
-
