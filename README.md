@@ -87,6 +87,21 @@ PdfProcessingHandle.create(pdfDocument)
   .process();
 ```
 
+### Routing requests
+
+Chrome can send requests to another address than the page asked for. The page does not notice: to the page, the request went to its
+original URL. This lets a page that calls its own `/api` run against a backend on an internal address, without that address ever
+reaching the page:
+
+```java
+ExportJob.create(url)
+  .route("http://webserver:8080/api/", "http://api.internal:8080/api/")
+  .print();
+```
+
+Every request whose URL starts with the first prefix goes to the second prefix plus the rest of the URL. A prefix cannot contain
+`*`, `?` or `\`.
+
 ### Snapshot Export
 
 To export a web page to PNG;
