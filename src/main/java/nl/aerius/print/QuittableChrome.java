@@ -46,13 +46,15 @@ public class QuittableChrome extends DevToolsDriver {
   private final String id;
   private final boolean trackNetworkFailures;
   private final NetworkFailureTracker networkFailureTracker;
+  private final RequestRoutes routes;
 
   public QuittableChrome(final Response res, final DriverOptions options, final Command command, final String webSocketUrl,
-      final boolean trackNetworkFailures) {
+      final boolean trackNetworkFailures, final RequestRoutes routes) {
     super(options, command, webSocketUrl);
 
     this.trackNetworkFailures = trackNetworkFailures;
     this.networkFailureTracker = trackNetworkFailures ? new NetworkFailureTracker() : null;
+    this.routes = routes;
 
     // Fetch the page ID
     id = res.json().get("$.id");
@@ -64,6 +66,9 @@ public class QuittableChrome extends DevToolsDriver {
     if (trackNetworkFailures) {
       enableNetworkEvents();
     }
+    if (!routes.isEmpty()) {
+      method("Fetch.enable").param("patterns", routes.patterns()).send();
+    }
     if (!options.headless) {
       initWindowIdAndState();
     }
@@ -74,6 +79,11 @@ public class QuittableChrome extends DevToolsDriver {
   }
 
   public static QuittableChrome prepareAndStart(final Map<String, Object> map, final boolean trackNetworkFailures) {
+    return prepareAndStart(map, trackNetworkFailures, new RequestRoutes());
+  }
+
+  public static QuittableChrome prepareAndStart(final Map<String, Object> map, final boolean trackNetworkFailures,
+      final RequestRoutes routes) {
     final Map<String, Object> props = new HashMap<>();
     if (map != null) {
       props.putAll(map);
@@ -95,7 +105,7 @@ public class QuittableChrome extends DevToolsDriver {
     final Response res = http.path("json", "new").put(null);
 
     final String webSocketUrl = res.json().get("$.webSocketDebuggerUrl");
-    return new QuittableChrome(res, options, null, webSocketUrl, trackNetworkFailures);
+    return new QuittableChrome(res, options, null, webSocketUrl, trackNetworkFailures, routes);
   }
 
   private static synchronized ScenarioRuntime createRuntime() {
@@ -117,6 +127,10 @@ public class QuittableChrome extends DevToolsDriver {
 
   @Override
   public void receive(final DevToolsMessage dtm) {
+    if (dtm.methodIs("Fetch.requestPaused")) {
+      continueRouted(dtm);
+      return;
+    }
     if (trackNetworkFailures) {
       if (dtm.methodIs("Network.requestWillBeSent")) {
         networkFailureTracker.onRequest(dtm.getParam("requestId"), dtm.getParam("request.url"), dtm.getParam("request.method"),
@@ -129,6 +143,14 @@ public class QuittableChrome extends DevToolsDriver {
       }
     }
     super.receive(dtm);
+  }
+
+  private void continueRouted(final DevToolsMessage dtm) {
+    final String url = dtm.getParam("request.url");
+    final DevToolsMessage next = method("Fetch.continueRequest").param("requestId", dtm.getParam("requestId"));
+    routes.rewrite(url).ifPresent(routed -> next.param("url", routed));
+    // This runs on the socket thread that delivers Chrome's reply, so waiting for it would block forever
+    next.sendWithoutWaiting();
   }
 
   public List<NetworkFailure> getNetworkFailures() {
