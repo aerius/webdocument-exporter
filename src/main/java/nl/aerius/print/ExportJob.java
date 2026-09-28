@@ -57,6 +57,8 @@ public class ExportJob {
 
   private boolean trackNetworkFailures;
 
+  private final RequestRoutes routes = new RequestRoutes();
+
   // Hooks for custom behavior on complete and failure before the driver quits
   private DriverHook completeHook;
   private DriverHook failureHook;
@@ -216,6 +218,16 @@ public class ExportJob {
     return this;
   }
 
+  /**
+   * Let Chrome send every request whose URL starts with {@code fromPrefix} to {@code toPrefix} instead. The page does not see this:
+   * to the page the request went to its original URL, so the target address never reaches the page.
+   */
+  public ExportJob route(final String fromPrefix, final String toPrefix) {
+    checkExported();
+    routes.add(fromPrefix, toPrefix);
+    return this;
+  }
+
   private void waitForComplete(final DevToolsDriver driver) {
     waitForComplete.accept(driver);
   }
@@ -245,7 +257,7 @@ public class ExportJob {
     options.put("headless", true);
     options.put("host", host);
 
-    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options, trackNetworkFailures);
+    final QuittableChrome chrome = QuittableChrome.prepareAndStart(options, trackNetworkFailures, routes);
     chrome.retry(retryCount);
 
     return chrome;
